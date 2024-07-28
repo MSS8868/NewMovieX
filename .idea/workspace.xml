@@ -4,26 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8451f166-a133-4b16-a5ba-69a55981d9ca" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/sqlite_jdbc_3_46_0_0.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/MovieX.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Main.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/moviex/DatabaseManager.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/moviex/HomePage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/moviex/LoginPage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/moviex/Movie.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/moviex/MovieX.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/moviex/MovieXTheme.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/moviex/Review.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/inception.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../main/java/javafx/scene/control/Label.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../.idea/encodings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../main/pom.xml" afterDir="false" />
+    <list default="true" id="8451f166-a133-4b16-a5ba-69a55981d9ca" name="Changes" comment="1st commit of newmoviex">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/inception.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/moviex/inception.jpg" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,6 +22,7 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="SYNC" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -89,6 +73,7 @@
       <recent name="C:\Users\mssms\OneDrive\Desktop\perspex\demo1\src\MovieX\src" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\mssms\OneDrive\Desktop\perspex\demo1\src\MovieX\src\com\moviex" />
       <recent name="C:\Users\mssms\OneDrive\Desktop\perspex\demo1\src\MovieX\src" />
     </key>
   </component>
@@ -101,7 +86,20 @@
       <option name="presentableId" value="Default" />
       <updated>1721819543394</updated>
     </task>
+    <task id="LOCAL-00001" summary="1st commit of newmoviex">
+      <option name="closed" value="true" />
+      <created>1722144512318</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1722144512318</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="1st commit of newmoviex" />
+    <option name="LAST_COMMIT_MESSAGE" value="1st commit of newmoviex" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -110,6 +108,11 @@
           <url>file://$PROJECT_DIR$/src/Main.java</url>
           <line>11</line>
           <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/com/moviex/DatabaseManager.java</url>
+          <line>15</line>
+          <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
