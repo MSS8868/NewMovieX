@@ -71,13 +71,33 @@ public class LoginPage extends JFrame {
                 String email = emailField.getText();
                 String password = new String(passwordField.getPassword());
 
-                if (DatabaseManager.authenticateUser(email, password)) {
-                    JOptionPane.showMessageDialog(LoginPage.this, "Login successful!");
-                    new HomePage(email).setVisible(true);
-                    dispose();
-                } else {
-                    JOptionPane.showMessageDialog(LoginPage.this, "Invalid email or password.");
-                }
+                LoadingScreen loadingScreen = new LoadingScreen();
+                loadingScreen.setVisible(true);
+
+                SwingWorker<Void, Void> worker = new SwingWorker<>() {
+                    @Override
+                    protected Void doInBackground() {
+                        if (DatabaseManager.authenticateUser(email, password)) {
+                            return null;
+                        } else {
+                            throw new RuntimeException("Invalid email or password.");
+                        }
+                    }
+
+                    @Override
+                    protected void done() {
+                        loadingScreen.dispose();
+                        try {
+                            get();
+                            JOptionPane.showMessageDialog(LoginPage.this, "Login successful!");
+                            new HomePage(email).setVisible(true);
+                            dispose();
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(LoginPage.this, ex.getMessage(), "Login failed", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                };
+                worker.execute();
             }
         });
 
