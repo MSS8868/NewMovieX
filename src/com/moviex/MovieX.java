@@ -7,7 +7,8 @@ public class MovieX {
         SwingUtilities.invokeLater(() -> {
             MovieXTheme.applyTheme();
             DatabaseManager.initDatabase();
-            new LoginPage().setVisible(true);
+            LoginPage loginPage = new LoginPage();
+            loginPage.setVisible(true);
         });
     }
 }

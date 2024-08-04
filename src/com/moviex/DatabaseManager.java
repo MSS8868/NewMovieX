@@ -1,11 +1,11 @@
 package com.moviex;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.File;
-import java.time.LocalDateTime;
 
 public class DatabaseManager {
     private static final String DB_URL = "jdbc:sqlite:" + new File("moviex.db").getAbsolutePath();
@@ -18,7 +18,9 @@ public class DatabaseManager {
             stmt.execute("CREATE TABLE IF NOT EXISTS users (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "email TEXT NOT NULL UNIQUE," +
-                    "password TEXT NOT NULL)");
+                    "password TEXT NOT NULL," +
+                    "is_trusted_reviewer BOOLEAN DEFAULT FALSE," +
+                    "has_badge BOOLEAN DEFAULT FALSE)");
 
             // Create movies table with rating column
             stmt.execute("CREATE TABLE IF NOT EXISTS movies (" +
@@ -36,6 +38,7 @@ public class DatabaseManager {
                     "review TEXT NOT NULL," +
                     "rating INTEGER NOT NULL," +
                     "date_time TEXT NOT NULL," +
+                    "likes INTEGER DEFAULT 0," +
                     "FOREIGN KEY (movie_id) REFERENCES movies(id)," +
                     "FOREIGN KEY (user_id) REFERENCES users(id))");
 
@@ -138,9 +141,72 @@ public class DatabaseManager {
         }
     }
 
+    public static boolean likeReview(int reviewId) {
+        String sqlUpdateLikes = "UPDATE reviews SET likes = likes + 1 WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmtUpdateLikes = conn.prepareStatement(sqlUpdateLikes)) {
+
+            pstmtUpdateLikes.setInt(1, reviewId);
+            int affectedRows = pstmtUpdateLikes.executeUpdate();
+            if (affectedRows > 0) {
+                checkAndUpdateBadge(reviewId);
+                return true;
+            }
+            return false;
+        } catch (SQLException e) {
+            System.out.println("Error liking review: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static void checkAndUpdateBadge(int reviewId) {
+        String sqlSelectReview = "SELECT user_id, likes FROM reviews WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmtSelectReview = conn.prepareStatement(sqlSelectReview)) {
+
+            pstmtSelectReview.setInt(1, reviewId);
+            ResultSet rs = pstmtSelectReview.executeQuery();
+            if (rs.next()) {
+                int userId = rs.getInt("user_id");
+                int likes = rs.getInt("likes");
+                if (likes >= 5) {
+                    updateUserBadge(userId, true);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error checking badge: " + e.getMessage());
+        }
+    }
+
+    private static void updateUserBadge(int userId, boolean hasBadge) {
+        String sql = "UPDATE users SET has_badge = ? WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setBoolean(1, hasBadge);
+            pstmt.setInt(2, userId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Error updating user badge: " + e.getMessage());
+        }
+    }
+
+    public static void markMovieAsWatched(String userEmail, int movieId) {
+        String sql = "INSERT OR IGNORE INTO watched_movies (user_id, movie_id) VALUES ((SELECT id FROM users WHERE email = ?), ?)";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userEmail);
+            pstmt.setInt(2, movieId);
+            pstmt.executeUpdate();
+            System.out.println("Movie marked as watched successfully.");
+        } catch (SQLException e) {
+            System.out.println("Error marking movie as watched: " + e.getMessage());
+        }
+    }
+
     public static List<Review> getReviewsForMovie(int movieId) {
         List<Review> reviews = new ArrayList<>();
-        String sql = "SELECT r.id, r.movie_id, u.email, r.review, r.rating, r.date_time FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.movie_id = ?";
+        String sql = "SELECT r.id, r.movie_id, u.email, r.review, r.rating, r.date_time, r.likes, u.has_badge " +
+                "FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.movie_id = ?";
 
         try (Connection conn = DriverManager.getConnection(DB_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -157,7 +223,11 @@ public class DatabaseManager {
                 int rating = rs.getInt("rating");
                 String dateTimeString = rs.getString("date_time");
                 LocalDateTime dateTime = LocalDateTime.parse(dateTimeString, formatter);
-                reviews.add(new Review(id, movieId, userEmail, reviewText, dateTime, rating));
+                int likes = rs.getInt("likes");
+                boolean hasBadge = rs.getBoolean("has_badge");
+
+                Review review = new Review(id, movieId, userEmail, reviewText, dateTime, rating, likes, false, hasBadge);
+                reviews.add(review);
             }
         } catch (SQLException e) {
             System.out.println("Error getting reviews: " + e.getMessage());

@@ -5,9 +5,9 @@ import java.awt.*;
 
 public class MovieXTheme {
     public static final Color BACKGROUND_COLOR = new Color(18, 18, 18);
-    public static final Color TEXT_COLOR = new Color(255, 255, 255);
+    public static final Color TEXT_COLOR = new Color(220, 180, 166);
     public static final Color ACCENT_COLOR = new Color(229, 9, 20);
-    public static final Color CARD_BACKGROUND = new Color(30, 30, 30);
+    public static final Color CARD_BACKGROUND = new Color(40, 40, 40);
     public static final Font TITLE_FONT = new Font("Montserrat", Font.BOLD, 32);
     public static final Font SUBTITLE_FONT = new Font("Montserrat", Font.BOLD, 24);
     public static final Font NORMAL_FONT = new Font("Roboto", Font.PLAIN, 16);

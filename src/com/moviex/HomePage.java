@@ -4,11 +4,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.net.URL;
 import javax.imageio.ImageIO;
-import java.io.IOException;
 
 public class HomePage extends JFrame {
     private String userEmail;
@@ -43,19 +44,44 @@ public class HomePage extends JFrame {
         welcomeLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         topPanel.add(welcomeLabel, BorderLayout.CENTER);
 
-        // Search panel
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        searchPanel.setBackground(MovieXTheme.BACKGROUND_COLOR);
+        // Top-right panel for search, home, profile, and feedback buttons
+        JPanel topRightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        topRightPanel.setBackground(MovieXTheme.BACKGROUND_COLOR);
+
         searchField = new JTextField(20);
         searchField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(MovieXTheme.ACCENT_COLOR),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+
         JButton searchButton = new JButton("Search");
         searchButton.setFont(MovieXTheme.NORMAL_FONT);
         searchButton.addActionListener(e -> searchMovies());
-        searchPanel.add(searchField);
-        searchPanel.add(searchButton);
-        topPanel.add(searchPanel, BorderLayout.EAST);
+
+        JButton homeButton = new JButton("Home");
+        homeButton.setFont(MovieXTheme.NORMAL_FONT);
+        homeButton.addActionListener(e -> {
+            searchField.setText("");
+            moviePanel.removeAll();
+            populateMovies();
+            moviePanel.revalidate();
+            moviePanel.repaint();
+        });
+
+        JButton profileButton = new JButton("Profile");
+        profileButton.setFont(MovieXTheme.NORMAL_FONT);
+        profileButton.addActionListener(e -> showProfile());
+
+        JButton feedbackButton = new JButton("Feedback");
+        feedbackButton.setFont(MovieXTheme.NORMAL_FONT);
+        feedbackButton.addActionListener(e -> showFeedbackForm());
+
+        topRightPanel.add(searchField);
+        topRightPanel.add(searchButton);
+        topRightPanel.add(homeButton);
+        topRightPanel.add(profileButton);
+        topRightPanel.add(feedbackButton);
+
+        topPanel.add(topRightPanel, BorderLayout.EAST);
 
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
@@ -69,15 +95,44 @@ public class HomePage extends JFrame {
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         add(mainPanel);
-
+        initializeMovieList();
         populateMovies();
 
         setVisible(true);
     }
 
     private void populateMovies() {
-        allMovies = DatabaseManager.getAllMovies();
-        displayMovies(allMovies);
+        moviePanel.removeAll();
+        JLabel loadingLabel = new JLabel("Loading movies...");
+        moviePanel.add(loadingLabel);
+        moviePanel.revalidate();
+        moviePanel.repaint();
+
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                if (allMovies == null) {
+                    allMovies = DatabaseManager.getAllMovies();
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                moviePanel.removeAll();
+                for (Movie movie : allMovies) {
+                    addMovieCard(movie);
+                }
+                moviePanel.revalidate();
+                moviePanel.repaint();
+            }
+        };
+        worker.execute();
+    }
+
+    private void addMovieCard(Movie movie) {
+        JPanel movieCard = createMovieCard(movie);
+        moviePanel.add(movieCard);
     }
 
     private void displayMovies(List<Movie> movies) {
@@ -150,6 +205,7 @@ public class HomePage extends JFrame {
         panel.setBackground(MovieXTheme.BACKGROUND_COLOR);
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+        // Movie image
         try {
             URL url = new URL(movie.getImagePath());
             Image image = ImageIO.read(url);
@@ -157,96 +213,139 @@ public class HomePage extends JFrame {
                 image = image.getScaledInstance(300, 450, Image.SCALE_SMOOTH);
                 JLabel imageLabel = new JLabel(new ImageIcon(image));
                 panel.add(imageLabel, BorderLayout.WEST);
-            } else {
-                throw new IOException("Failed to load image");
             }
         } catch (IOException e) {
-            JPanel colorPanel = new JPanel();
-            colorPanel.setBackground(MovieXTheme.ACCENT_COLOR);
-            colorPanel.setPreferredSize(new Dimension(300, 450));
-            panel.add(colorPanel, BorderLayout.WEST);
+            e.printStackTrace();
         }
 
-        JPanel detailsPanel = new JPanel(new BorderLayout(10, 10));
+        JPanel detailsPanel = new JPanel(new GridBagLayout());
         detailsPanel.setBackground(MovieXTheme.BACKGROUND_COLOR);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
 
+        // Title
         JLabel titleLabel = new JLabel(movie.getTitle());
         titleLabel.setFont(MovieXTheme.TITLE_FONT);
         titleLabel.setForeground(MovieXTheme.ACCENT_COLOR);
-        detailsPanel.add(titleLabel, BorderLayout.NORTH);
+        detailsPanel.add(titleLabel, gbc);
 
+        // Description
         JTextArea descriptionArea = new JTextArea(movie.getDescription());
         descriptionArea.setWrapStyleWord(true);
         descriptionArea.setLineWrap(true);
         descriptionArea.setOpaque(false);
-        descriptionArea.setFont(MovieXTheme.NORMAL_FONT);
-        descriptionArea.setForeground(MovieXTheme.TEXT_COLOR);
         descriptionArea.setEditable(false);
-        detailsPanel.add(new JScrollPane(descriptionArea), BorderLayout.CENTER);
+        descriptionArea.setForeground(MovieXTheme.TEXT_COLOR);
+        detailsPanel.add(descriptionArea, gbc);
 
-        // Add rating display
+        // Current Rating
         JLabel currentRatingLabel = new JLabel(String.format("Current Rating: %.1f/5.0", movie.getRating()));
-        currentRatingLabel.setFont(MovieXTheme.NORMAL_FONT);
         currentRatingLabel.setForeground(MovieXTheme.TEXT_COLOR);
-        JPanel ratingPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        ratingPanel.setBackground(new Color(30, 30, 30));
-        ratingPanel.add(currentRatingLabel);
-        detailsPanel.add(ratingPanel, BorderLayout.CENTER);
+        detailsPanel.add(currentRatingLabel, gbc);
 
+        // Add Review Button
         JButton addReviewButton = new JButton("Add Review");
-        addReviewButton.setFont(MovieXTheme.NORMAL_FONT);
         addReviewButton.addActionListener(e -> addReview(movie));
-        detailsPanel.add(addReviewButton, BorderLayout.SOUTH);
+        detailsPanel.add(addReviewButton, gbc);
 
-        panel.add(detailsPanel, BorderLayout.CENTER);
+        // Upload Proof Button
+        JButton uploadProofButton = new JButton("Upload Proof");
+        uploadProofButton.addActionListener(e -> uploadProof(movie));
+        detailsPanel.add(uploadProofButton, gbc);
 
-        // Add reviews panel
-        JPanel reviewsPanel = new JPanel(new BorderLayout());
+        // Reviews
+        JPanel reviewsPanel = new JPanel();
+        reviewsPanel.setLayout(new BoxLayout(reviewsPanel, BoxLayout.Y_AXIS));
         reviewsPanel.setBackground(MovieXTheme.BACKGROUND_COLOR);
-        JLabel reviewsLabel = new JLabel("Reviews");
-        reviewsLabel.setFont(MovieXTheme.SUBTITLE_FONT);
-        reviewsLabel.setBackground(new Color(30, 30, 30));
-        reviewsLabel.setForeground(MovieXTheme.ACCENT_COLOR);
-        reviewsPanel.add(reviewsLabel, BorderLayout.NORTH);
-
-        JTextArea reviewsArea = new JTextArea();
-        reviewsArea.setWrapStyleWord(true);
-        reviewsArea.setLineWrap(true);
-        reviewsArea.setOpaque(false);
-        reviewsArea.setFont(MovieXTheme.NORMAL_FONT);
-        reviewsArea.setBackground(new Color(30, 30, 30));
-        reviewsArea.setForeground(MovieXTheme.TEXT_COLOR);
-        reviewsArea.setEditable(false);
 
         List<Review> reviews = DatabaseManager.getReviewsForMovie(movie.getId());
         for (Review review : reviews) {
-            reviewsArea.append(review.getUserEmail() + " - " + review.getStarRating() + "\n");
-            reviewsArea.append(review.getReviewText() + "\n");
-            reviewsArea.append("Posted on: " + review.getFormattedDateTime() + "\n\n");
+            JPanel reviewPanel = new JPanel(new BorderLayout());
+            reviewPanel.setBackground(MovieXTheme.CARD_BACKGROUND);
+            reviewPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+            JLabel reviewerLabel = new JLabel(review.getDisplayName());
+            reviewerLabel.setForeground(MovieXTheme.ACCENT_COLOR);
+            reviewPanel.add(reviewerLabel, BorderLayout.NORTH);
+
+            JTextArea reviewText = new JTextArea(review.getReviewText());
+            reviewText.setWrapStyleWord(true);
+            reviewText.setLineWrap(true);
+            reviewText.setOpaque(false);
+            reviewText.setEditable(false);
+            reviewText.setForeground(MovieXTheme.TEXT_COLOR);
+            reviewPanel.add(reviewText, BorderLayout.CENTER);
+
+            JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            bottomPanel.setOpaque(false);
+
+            JLabel ratingLabel = new JLabel("Rating: " + review.getStarRating());
+            ratingLabel.setForeground(MovieXTheme.TEXT_COLOR);
+            bottomPanel.add(ratingLabel);
+
+            JButton likeButton = new JButton("Like (" + review.getLikes() + ")");
+            likeButton.addActionListener(e -> {
+                if (DatabaseManager.likeReview(review.getId())) {
+                    review.setLikes(review.getLikes() + 1);
+                    likeButton.setText("Like (" + review.getLikes() + ")");
+                    if (review.getLikes() >= 5 && !review.hasBadge()) {
+                        review.setBadge(true);
+                        reviewerLabel.setText(review.getDisplayName() + " [Badge]");
+                    }
+                }
+            });
+            bottomPanel.add(likeButton);
+
+            reviewPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+            reviewsPanel.add(reviewPanel);
+            reviewsPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         }
 
-        JScrollPane reviewsScrollPane = new JScrollPane(reviewsArea);
-        reviewsScrollPane.setPreferredSize(new Dimension(500, 200));
-        reviewsPanel.add(reviewsScrollPane, BorderLayout.CENTER);
+        JScrollPane reviewsScrollPane = new JScrollPane(reviewsPanel);
+        reviewsScrollPane.setPreferredSize(new Dimension(400, 300));
+        detailsPanel.add(reviewsScrollPane, gbc);
 
-        panel.add(reviewsPanel, BorderLayout.SOUTH);
+        panel.add(detailsPanel, BorderLayout.CENTER);
 
         dialog.add(panel);
         dialog.setVisible(true);
     }
 
+    private void uploadProof(Movie movie) {
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            // Here you would typically upload the file to a server
+            // For this example, we'll just show a success message
+            JOptionPane.showMessageDialog(this, "Proof uploaded successfully for " + movie.getTitle());
+            // Update the database to mark this movie as watched by the user
+            DatabaseManager.markMovieAsWatched(userEmail, movie.getId());
+        }
+    }
+
     private void addReview(Movie movie) {
-        JPanel reviewPanel = new JPanel(new GridLayout(3, 2, 5, 5));
-        JTextArea reviewTextArea = new JTextArea(5, 20);
+        JPanel reviewPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        JTextArea reviewTextArea = new JTextArea(5, 30);
+        reviewTextArea.setLineWrap(true);
+        reviewTextArea.setWrapStyleWord(true);
+        JScrollPane scrollPane = new JScrollPane(reviewTextArea);
+        reviewPanel.add(scrollPane, gbc);
+
         JSlider ratingSlider = new JSlider(1, 5, 3);
         ratingSlider.setMajorTickSpacing(1);
         ratingSlider.setPaintTicks(true);
         ratingSlider.setPaintLabels(true);
-        reviewTextArea.setForeground(MovieXTheme.TEXT_COLOR);
-        reviewPanel.add(new JLabel("Your Review:"));
-        reviewPanel.add(reviewTextArea);
-        reviewPanel.add(new JLabel("Rating:"));
-        reviewPanel.add(ratingSlider);
+        reviewPanel.add(new JLabel("Rating:"), gbc);
+        reviewPanel.add(ratingSlider, gbc);
 
         int result = JOptionPane.showConfirmDialog(this, reviewPanel, "Add Review for " + movie.getTitle(),
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
@@ -268,9 +367,76 @@ public class HomePage extends JFrame {
 
     private void searchMovies() {
         String searchTerm = searchField.getText().toLowerCase();
+        if (allMovies == null) {
+            allMovies = DatabaseManager.getAllMovies();
+        }
         List<Movie> filteredMovies = allMovies.stream()
                 .filter(movie -> movie.getTitle().toLowerCase().contains(searchTerm))
                 .collect(Collectors.toList());
         displayMovies(filteredMovies);
+    }
+
+    private void showProfile() {
+        JDialog profileDialog = new JDialog(this, "User Profile", true);
+        profileDialog.setSize(400, 300);
+        profileDialog.setLocationRelativeTo(this);
+
+        JPanel panel = new JPanel(new GridLayout(3, 1, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        panel.setBackground(MovieXTheme.BACKGROUND_COLOR);
+
+        JLabel emailLabel = new JLabel("Email: " + userEmail);
+        emailLabel.setForeground(MovieXTheme.TEXT_COLOR);
+        panel.add(emailLabel);
+
+        // Add additional user information if needed
+        JButton changePasswordButton = new JButton("Change Password");
+        changePasswordButton.addActionListener(e -> changePassword());
+        panel.add(changePasswordButton);
+
+        profileDialog.add(panel);
+        profileDialog.setVisible(true);
+    }
+
+    private void changePassword() {
+        // Implement password change functionality
+        JOptionPane.showMessageDialog(this, "Password change functionality not implemented yet.");
+    }
+
+    private void showFeedbackForm() {
+        JDialog feedbackDialog = new JDialog(this, "Provide Feedback", true);
+        feedbackDialog.setSize(400, 300);
+        feedbackDialog.setLocationRelativeTo(this);
+
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        panel.setBackground(MovieXTheme.BACKGROUND_COLOR);
+
+        JTextArea feedbackArea = new JTextArea(5, 30);
+        feedbackArea.setLineWrap(true);
+        feedbackArea.setWrapStyleWord(true);
+        JScrollPane scrollPane = new JScrollPane(feedbackArea);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        JButton submitButton = new JButton("Submit Feedback");
+        submitButton.addActionListener(e -> {
+            String feedback = feedbackArea.getText();
+            if (!feedback.trim().isEmpty()) {
+                // Here you would typically send the feedback to a server
+                // For this example, we'll just show a success message
+                JOptionPane.showMessageDialog(feedbackDialog, "Thank you for your feedback!");
+                feedbackDialog.dispose();
+            } else {
+                JOptionPane.showMessageDialog(feedbackDialog, "Please enter your feedback before submitting.");
+            }
+        });
+        panel.add(submitButton, BorderLayout.SOUTH);
+
+        feedbackDialog.add(panel);
+        feedbackDialog.setVisible(true);
+    }
+
+    private void initializeMovieList() {
+        allMovies = DatabaseManager.getAllMovies();
     }
 }

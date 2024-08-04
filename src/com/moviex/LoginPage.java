@@ -65,42 +65,42 @@ public class LoginPage extends JFrame {
         gbc.gridy = 4;
         panel.add(registerButton, gbc);
 
+        // Integrating the provided login button action listener code
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String email = emailField.getText();
                 String password = new String(passwordField.getPassword());
 
-                LoadingScreen loadingScreen = new LoadingScreen();
+                LoadingScreen loadingScreen = new LoadingScreen(LoginPage.this);
                 loadingScreen.setVisible(true);
 
-                SwingWorker<Void, Void> worker = new SwingWorker<>() {
+                SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
                     @Override
-                    protected Void doInBackground() {
-                        if (DatabaseManager.authenticateUser(email, password)) {
-                            return null;
-                        } else {
-                            throw new RuntimeException("Invalid email or password.");
-                        }
+                    protected Boolean doInBackground() throws Exception {
+                        Thread.sleep(1000); // Simulate loading time
+                        return DatabaseManager.authenticateUser(email, password);
                     }
 
                     @Override
                     protected void done() {
                         loadingScreen.dispose();
                         try {
-                            get();
-                            JOptionPane.showMessageDialog(LoginPage.this, "Login successful!");
-                            new HomePage(email).setVisible(true);
-                            dispose();
+                            if (get()) {
+                                JOptionPane.showMessageDialog(LoginPage.this, "Login successful!");
+                                new HomePage(email).setVisible(true);
+                                dispose();
+                            } else {
+                                JOptionPane.showMessageDialog(LoginPage.this, "Invalid email or password.", "Login failed", JOptionPane.ERROR_MESSAGE);
+                            }
                         } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(LoginPage.this, ex.getMessage(), "Login failed", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(LoginPage.this, "An error occurred: " + ex.getMessage(), "Login failed", JOptionPane.ERROR_MESSAGE);
                         }
                     }
                 };
                 worker.execute();
             }
         });
-
         registerButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

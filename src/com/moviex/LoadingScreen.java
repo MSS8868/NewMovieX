@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class LoadingScreen extends JDialog {
-    public LoadingScreen() {
+    public LoadingScreen(LoginPage loginPage) {
         setTitle("Loading...");
         setSize(200, 100);
         setLocationRelativeTo(null);
